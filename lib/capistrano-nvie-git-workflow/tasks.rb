@@ -28,13 +28,18 @@ Capistrano::Configuration.instance.load do
     end
 
     task :set_from_tag do
-      ENV['git_log_command'] = 'log --pretty=format:"%h %ad %s [%an]" --date=short' unless ENV['git_log_command']
       if fetch(:stage) == :production
         _cset :from_tag, choose_deployment_tag
+      else
+        set :branch, choose_deployment_branch
       end
     end
 
-    before "git:commit_log", "git:set_from_tag"
+    task :set_log_command do
+      ENV['git_log_command'] = fetch(:git_log_command, 'log --pretty=format:"%h %ad %s [%an]" --date=short') unless ENV['git_log_command']
+    end
+
+    before "git:commit_log", "git:set_from_tag", "git:set_log_command"
   end
 
 
