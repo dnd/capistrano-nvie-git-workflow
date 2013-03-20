@@ -47,6 +47,14 @@ module CapistranoNvieGitWorkflow::TaskHelpers
     end
   end
 
+  def final_stage
+    workflow_stages.last
+  end
+
+  def final_stage?
+    final_stage == fetch(:stage).to_s
+  end
+
   def get_deployable_branches
     rem_branches = filter_remote_branches
     releases = rem_branches.map {|b| b if b =~ /^release-/}
@@ -67,6 +75,14 @@ module CapistranoNvieGitWorkflow::TaskHelpers
     get_local_branches.include? target_branch
   end
 
+  def initial_stage
+    workflow_stages.first
+  end
+
+  def initial_stage?
+    initial_stage == fetch(:stage).to_s
+  end
+
   def local_sh(cmd)
     Capistrano::CLI.ui.say "    Executing locally: #{cmd}"
     r = `#{cmd}`
@@ -80,15 +96,25 @@ module CapistranoNvieGitWorkflow::TaskHelpers
     local_sh "git push #{upstream_remote}"
   end
 
-  def previous_stage
-    'qa'
+  def next_stage
+    next_idx = workflow_stages.index(fetch(:stage).to_s) + 1
+    next_idx >= workflow_stages.size ? nil : workflow_stages[next_idx]
   end
 
-  def setup_final_workflow_stage
+  def previous_stage
+    previous_idx = workflow_stages.index(fetch(:stage).to_s) - 1
+    previous_idx < 0 ? nil : workflow_stages[previous_idx]
+  end
+
+  def setup_tagged_workflow_stage
     deploy_tag = choose_deployment_tag
-    checkout_and_pull_branch fetch(:production_branch, 'master')
     version = get_version_from_tag deploy_tag
-    merge_tag_to_production deploy_tag, version
+
+    if final_stage?
+      checkout_and_pull_branch fetch(:production_branch, 'master')
+      merge_tag_to_production(deploy_tag, version) if final_stage?
+    end
+
     _cset :tag, create_deployment_tag(version)
     _cset :from_tag, deploy_tag
   end
@@ -98,5 +124,31 @@ module CapistranoNvieGitWorkflow::TaskHelpers
     checkout_and_pull_branch deployment_branch
     set :branch, deployment_branch
     _cset :tag, create_deployment_tag_from_branch(deployment_branch)
+  end
+
+  def workflow_stages
+    @workflow_stages ||= if exists?(:workflow_stages)
+      fetch :workflow_stages
+    elsif fetch(:stages).size == 2
+      stages = fetch(:stages).dup
+      abort(<<-EOF) unless stages.delete('production')
+  failed: No 'production' stage found
+    
+    You do not have a stage named 'production'. Please specify the proper
+    stage deployment order by setting the :workflow_stages variable with 
+    the final production stage last.
+    EOF
+
+      stages << 'production'
+      stages
+    else
+      abort(<<-EOF)
+  failed: Unable to identify workflow stages
+
+    You must either have only two stages defined in the :stages variable
+    or you must set the :workflow_stages variable to the stages you want 
+    to deploy to, and their proper sequence.
+      EOF
+    end
   end
 end

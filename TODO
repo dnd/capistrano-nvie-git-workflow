@@ -1,3 +1,2 @@
 * Implement natural sort for tag lists
-* Allow for different stage names/numbers
 * Identify deployment file updates on fetch and suggest restart of release

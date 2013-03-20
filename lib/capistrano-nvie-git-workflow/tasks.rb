@@ -16,22 +16,22 @@ Capistrano::Configuration.instance.load do
     task :use_nvie_workflow do
       ensure_git_fetch
       tag_task = ""
-      if fetch(:stage) == :production
-        setup_final_workflow_stage
-        tag_task = "git:retag"
-      else
+      if initial_stage?
         setup_initial_workflow_stage
         tag_task = "git:tag"
+      else
+        setup_tagged_workflow_stage
+        tag_task = "git:retag"
       end
 
       after "git:use_nvie_workflow", "git:guard_committed", "git:guard_upstream", tag_task
     end
 
     task :set_from_tag do
-      if fetch(:stage) == :production
-        _cset :from_tag, choose_deployment_tag
-      else
+      if initial_stage?
         set :branch, choose_deployment_branch
+      else
+        _cset :from_tag, choose_deployment_tag
       end
     end
 
