@@ -1,2 +1,3 @@
 * Implement natural sort for tag lists
 * Identify deployment file updates on fetch and suggest restart of release
+* Only show latest tag per version from previous stage?
