@@ -6,7 +6,7 @@ module CapistranoNvieGitWorkflow::TaskHelpers
   def checkout_and_pull_branch(deployment_branch)
     if has_branch_locally?(deployment_branch)
       local_sh "git checkout #{deployment_branch}"
-      local_sh "git pull #{upstream_remote}"
+      local_sh "git pull #{upstream_remote} #{deployment_branch}"
     else
       local_sh "git checkout -b #{deployment_branch}  #{upstream_remote}/#{deployment_branch} -t"
     end
@@ -91,9 +91,9 @@ module CapistranoNvieGitWorkflow::TaskHelpers
   end
 
   def merge_tag_to_production(deploy_tag, version)
-    `git checkout #{fetch(:production_branch, 'master')}`
+    `git checkout #{production_branch}`
     local_sh "git merge --no-ff --no-edit -m 'Release #{version} to #{fetch :stage}' #{deploy_tag}"
-    local_sh "git push #{upstream_remote}"
+    local_sh "git push #{upstream_remote} #{production_branch}"
   end
 
   def next_stage
@@ -104,6 +104,10 @@ module CapistranoNvieGitWorkflow::TaskHelpers
   def previous_stage
     previous_idx = workflow_stages.index(fetch(:stage).to_s) - 1
     previous_idx < 0 ? nil : workflow_stages[previous_idx]
+  end
+
+  def production_branch
+    fetch(:production_branch, 'master')
   end
 
   def setup_tagged_workflow_stage
