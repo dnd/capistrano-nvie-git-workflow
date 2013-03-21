@@ -12,6 +12,13 @@ Capistrano::Configuration.instance.load do
     extend CapGitTools::TaskHelpers
     extend CapistranoNvieGitWorkflow::TaskHelpers
 
+    _cset :deployment_file_paths, [
+      'Capfile',
+      'config/deploy',
+      'config/recipes',
+      'lib/recipes'
+    ]
+
     desc "Sets the proper values to deploy using the nvie workflow"
     task :use_nvie_workflow do
       ensure_git_fetch

@@ -3,6 +3,12 @@ require 'cap_git_tools/tasks'
 module CapistranoNvieGitWorkflow::TaskHelpers
   include CapGitTools::TaskHelpers
 
+  def changed_files(ref_start, ref_end)
+    raw = `git log --name-status --oneline #{ref_start}...#{ref_end} | grep -e ^[MAD][[:space:]]`
+    files = raw.split("\n")
+    files.map {|f| f.sub(/^[MAD]\t/, '')}.uniq
+  end
+
   def checkout_and_pull_branch(deployment_branch)
     if has_branch_locally?(deployment_branch)
       local_sh "git checkout #{deployment_branch}"
@@ -36,6 +42,19 @@ module CapistranoNvieGitWorkflow::TaskHelpers
     create_deployment_tag version
   end
 
+  def deployment_file_paths
+    paths = fetch(:deployment_file_paths) || []
+    paths += fetch(:additional_deployment_file_paths) if exists?(:additional_deployment_file_paths)
+    paths
+  end
+
+  def deployment_files_changed?(files)
+    deployment_file_paths.each do |path|
+      return true if files.any? {|f| f =~ /^#{path}/}
+    end
+    false
+  end
+
   def filter_remote_branches
     rem_branches = local_sh("git branch -r --no-color").split "\n"
     rem_branches.reject! {|b| b =~ /HEAD/}
@@ -53,6 +72,17 @@ module CapistranoNvieGitWorkflow::TaskHelpers
 
   def final_stage?
     final_stage == fetch(:stage).to_s
+  end
+
+  def guard_deployment_file_changes(files)
+    return unless deployment_files_changed?(files)
+    abort(<<-EOF)
+  failed: deployment files have changed
+
+    One or more deployment files have changed since the last time
+    this branch was pulled. To ensure that all deployment files are
+    loaded properly the process will now end, and must be restarted.
+    EOF
   end
 
   def get_deployable_branches
@@ -125,7 +155,12 @@ module CapistranoNvieGitWorkflow::TaskHelpers
 
   def setup_initial_workflow_stage
     deployment_branch = choose_deployment_branch
+    # use the current branch because the importance is on where the script starts 
+    # running from, not specific differences between revisions on the deployment 
+    # branch.
+    changed = changed_files current_branch, "#{upstream_remote}/#{deployment_branch}"
     checkout_and_pull_branch deployment_branch
+    guard_deployment_file_changes changed
     set :branch, deployment_branch
     _cset :tag, create_deployment_tag_from_branch(deployment_branch)
   end
