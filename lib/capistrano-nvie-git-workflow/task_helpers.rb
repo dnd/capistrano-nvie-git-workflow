@@ -144,6 +144,10 @@ module CapistranoNvieGitWorkflow::TaskHelpers
     deploy_tag = choose_deployment_tag
     version = get_version_from_tag deploy_tag
 
+    changed = changed_files current_branch, deploy_tag
+    local_sh "git checkout #{deploy_tag}"
+    guard_deployment_file_changes changed
+
     if final_stage?
       checkout_and_pull_branch fetch(:production_branch, 'master')
       merge_tag_to_production(deploy_tag, version) if final_stage?

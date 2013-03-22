@@ -22,16 +22,18 @@ Capistrano::Configuration.instance.load do
     desc "Sets the proper values to deploy using the nvie workflow"
     task :use_nvie_workflow do
       ensure_git_fetch
-      tag_task = ""
+      after_tasks = ['git:guard_committed']
+
       if initial_stage?
         setup_initial_workflow_stage
-        tag_task = "git:tag"
+        after_tasks << "git:guard_upstream"
+        after_tasks << "git:tag"
       else
         setup_tagged_workflow_stage
-        tag_task = "git:retag"
+        after_tasks << "git:retag"
       end
 
-      after "git:use_nvie_workflow", "git:guard_committed", "git:guard_upstream", tag_task
+      after "git:use_nvie_workflow", *after_tasks
     end
 
     task :set_from_tag do
