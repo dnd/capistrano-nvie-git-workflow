@@ -18,5 +18,5 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
 
   gem.add_dependency "capistrano", "~> 2.0"
-  gem.add_dependency "cap_git_tools", "~> 0"
+  gem.add_dependency "cap_git_tools", "~> 0.9"
 end
