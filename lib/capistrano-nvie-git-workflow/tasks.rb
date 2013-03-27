@@ -34,6 +34,7 @@ Capistrano::Configuration.instance.load do
       end
 
       after "git:use_nvie_workflow", *after_tasks
+      before "git:commit_log", "git:set_from_tag", "git:set_log_command"
     end
 
     task :set_from_tag do
@@ -47,8 +48,6 @@ Capistrano::Configuration.instance.load do
     task :set_log_command do
       ENV['git_log_command'] = fetch(:git_log_command, 'log --pretty=format:"%h %ad %s [%an]" --date=short') unless ENV['git_log_command']
     end
-
-    before "git:commit_log", "git:set_from_tag", "git:set_log_command"
   end
 
 
