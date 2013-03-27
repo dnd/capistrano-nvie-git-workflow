@@ -8,8 +8,8 @@ Gem::Specification.new do |gem|
   gem.version       = CapistranoNvieGitWorkflow::VERSION
   gem.authors       = ["Steve Valaitis"]
   gem.email         = ["steve@digitalnothing.com"]
-  gem.description   = %q{TODO: Write a gem description}
-  gem.summary       = %q{TODO: Write a gem summary}
+  gem.description   = %q{Provides Capistrano tasks to deploy using the git workflow described in http://nvie.com/posts/a-successful-git-branching-model}
+  gem.summary       = %q{Capistrano tasks for the NVIE git workflow}
   gem.homepage      = "http://github.com/dnd/capistrano-nvie-git-workflow"
 
   gem.files         = `git ls-files`.split($/)
