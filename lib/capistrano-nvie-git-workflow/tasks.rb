@@ -34,7 +34,6 @@ Capistrano::Configuration.instance.load do
       end
 
       after "git:use_nvie_workflow", *after_tasks
-      before "git:commit_log", "git:set_from_tag", "git:set_log_command"
     end
 
     task :set_from_tag do
@@ -50,5 +49,5 @@ Capistrano::Configuration.instance.load do
     end
   end
 
-
+  before "git:commit_log", "git:set_from_tag", "git:set_log_command"
 end
